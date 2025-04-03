@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>GF(p²) Calculator</title>
+</head>
+<body>
+  <h2>GF(p²) — Таблица умножения и генератор</h2>
+  <pre id="output"></pre>
+
+  <script>
+    const output = document.getElementById("output");
+
+    // Step 1: Choose a prime p
+    const p = 7;
+
+    // Step 2: Search for irreducible polynomial x^2 + ax + b
+    function isIrreducible(a, b, p) {
+      for (let x = 0; x < p; x++) {
+        const value = (x * x + a * x + b) % p;
+        if (value === 0) return false;
+      }
+      return true;
+    }
+
+    let irreducible = null;
+    for (let a = 0; a < p; a++) {
+      for (let b = 0; b < p; b++) {
+        if (isIrreducible(a, b, p)) {
+          irreducible = [a, b];
+          output.innerText += `Неприводимый многочлен: x² + ${a}x + ${b} над GF(${p})\n`;
+          break;
+        }
+      }
+      if (irreducible) break;
+    }
+
+    const [a, b] = irreducible;
+
+    // Step 3: Elements of GF(p²)
+    const elements = [];
+    for (let x = 0; x < p; x++) {
+      for (let y = 0; y < p; y++) {
+        elements.push([x, y]);
+      }
+    }
+
+    // Step 4: Multiplication in GF(p²)
+    function multiply(u, v, p, a, b) {
+      const [x1, y1] = u;
+      const [x2, y2] = v;
+      const real = (x1 * x2 - y1 * y2 * b) % p;
+      const imag = (x1 * y2 + x2 * y1 - y1 * y2 * a) % p;
+      return [(real + p) % p, (imag + p) % p];
+    }
+
+    // Step 5: Multiplication Table
+    output.innerText += `\nТаблица умножения (первая строка):\n`;
+    const firstRow = [];
+    for (let v of elements) {
+      const result = multiply(elements[0], v, p, a, b);
+      firstRow.push(`${result[0]}+${result[1]}α`);
+    }
+    output.innerText += firstRow.join(" | ") + "\n";
+
+    // Step 6: Найти мультипликативный генератор
+    function power(element, exp, p, a, b) {
+      let result = [1, 0];
+      for (let i = 0; i < exp; i++) {
+        result = multiply(result, element, p, a, b);
+      }
+      return result;
+    }
+
+    const nonZero = elements.filter(e => !(e[0] === 0 && e[1] === 0));
+    const order = p * p - 1;
+
+    for (let candidate of nonZero) {
+      const powers = new Set();
+      let current = [1, 0];
+      for (let i = 1; i <= order; i++) {
+        current = multiply(current, candidate, p, a, b);
+        powers.add(current.toString());
+      }
+      if (powers.size === order) {
+        output.innerText += `\nГенератор мультипликативной группы найден: ${candidate[0]}+${candidate[1]}α`;
+        break;
+      }
+    }
+  </script>
+</body>
+</html>
